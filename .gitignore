@@ -6,3 +6,4 @@ __pycache__/
 # Ignore data directories
 MRI_DATA/
 STUDY_DATA/
+ENROLLMENT/
