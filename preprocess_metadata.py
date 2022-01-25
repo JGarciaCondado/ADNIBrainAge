@@ -3,9 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Clean data
-df = pd.read_csv('MRI_DATA/MRI3META.csv')
 cols = ['PHASE', 'RID', 'SITEID', 'VISCODE', 'VISCODE2']
-df = df[cols]
+df = pd.read_csv('MRI_DATA/MRI3META.csv', usecols=cols)
 
 # Seperate by Phase
 df_adni2 = df[df['PHASE'] == 'ADNI2']
@@ -32,9 +31,8 @@ sites_thr_adni3 = [x for x in set(adni3_pt_sites) \
 df_adni3_clean = df_adni3_sc[df_adni3_sc['SITEID'].isin(sites_thr_adni3)]
 
 # Load roster data
-df_roster = pd.read_csv('ENROLLMENT/ROSTER.csv').drop('ID', axis=1)
 cols_r = ['Phase', 'RID', 'SITEID', 'PTID']
-df_roster = df_roster[cols_r]
+df_roster = pd.read_csv('ENROLLMENT/ROSTER.csv', usecols=cols_r)
 
 # Add PTID information to csv
 df_roster_adni2 = df_roster[df_roster['Phase'] == 'ADNI2']
@@ -88,9 +86,8 @@ df_full_adni2 = df_adni2_clean.merge(df_mrilist_images2, left_on='PTID', right_o
                               .drop('SUBJECT', axis=1)
 
 # Load patient assesments
-df_assesment = pd.read_csv('ASSESMENT/DXSUM_PDXCONV_ADNIALL.csv')
 cols_a = ['RID', 'PTID', 'SITEID', 'Phase', 'VISCODE', 'VISCODE2', 'DXCHANGE', 'DIAGNOSIS']
-df_assesment = df_assesment[cols_a]
+df_assesment = pd.read_csv('ASSESMENT/DXSUM_PDXCONV_ADNIALL.csv', usecols=cols_a)
 
 # Standarize diagnosis
 df_full_adni3 = df_full_adni3.merge(df_assesment, on=['RID', 'PTID', 'SITEID',
@@ -104,3 +101,28 @@ df_full_adni2 = df_full_adni2.drop(['VISCODE', 'VISCODE2'], axis=1).merge(df_ass
 # Covnert to standard CN (1.0), MCI (2.0) and AD (3.0) labels as not interested in conversion metrics
 df_full_adni2["DXCHANGE"].replace({4.0: 2.0, 5.0: 3.0, 7.0:1.0}, inplace=True)
 df_full_adni2.rename(columns={'DXCHANGE':'DIAGNOSIS'}, inplace=True)
+
+# Load ADNI Merge data to get age information
+cols_m = ['COLPROT', 'PTID', 'VISCODE', 'AGE', 'DX_bl', 'PTGENDER', 'Years_bl']
+df_adni_merge = pd.read_csv('STUDY_DATA/ADNIMERGE.csv', usecols=cols_m)\
+                .rename(columns={'COLPROT':'Phase', 'VISCODE':'VISCODE2'})
+
+# Add age of patient at visit
+df_full_adni2 = df_full_adni2.merge(df_adni_merge, on=['PTID', 'Phase', 'VISCODE2'])
+df_full_adni2['AGE'] = df_full_adni2['AGE']+df_full_adni2['Years_bl']
+df_full_adni2.drop('Years_bl', axis=1, inplace=True)
+df_adni_merge['VISCODE2'].replace({'bl':'sc'}, inplace=True) #Different viscode naming in csvs
+df_full_adni3 = df_full_adni3.merge(df_adni_merge, on=['PTID', 'Phase', 'VISCODE2'])
+df_full_adni3['AGE'] = df_full_adni3['AGE']+df_full_adni3['Years_bl']
+df_full_adni3.drop('Years_bl', axis=1, inplace=True)
+
+# Save all metadata as csv
+df_full_adni2.to_csv('DATA/adni2_mri.csv')
+df_full_adni3.to_csv('DATA/adni3_mri.csv')
+pd.concat([df_full_adni2, df_full_adni3]).to_csv('DATA/adni2and3_mri.csv')
+
+# Save IMAGEIDs as txts
+with open ('DATA/adni2_mri_ids.txt', 'w') as f:
+     f.write(','.join(str(i) for i in df_full_adni2['IMAGEUID']))
+with open ('DATA/adni3_mri_ids.txt', 'w') as f:
+     f.write(','.join(str(i) for i in df_full_adni3['IMAGEUID']))
