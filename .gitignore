@@ -13,3 +13,6 @@ T1_images/
 
 # Notebook checkpoints
 jupyternotebooks/.ipynb_checkpoints/
+
+# MAC specific files
+.DS_store
