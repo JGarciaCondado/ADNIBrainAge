@@ -3,7 +3,8 @@ import numpy as np
 
 #Load data
 phase = 3
-df_metadata = pd.read_csv('../DATA/adni%d_mri.csv'%phase, index_col=0)
+df_metadata = pd.read_csv('../DATA/adni%d_mri.csv'%phase, index_col=0)\
+                .drop(['LASTEXAMDATE', 'LASTDIAGNOSIS', 'TYPECONVERSOR', 'CONVERSOR'], axis=1)
 
 # Load patient assesments
 cols_a = ['RID', 'EXAMDATE',
@@ -13,44 +14,66 @@ df_assesment = pd.read_csv(
 df_assesment.dropna(subset=['EXAMDATE'], inplace=True)
 
 # Get all patients in phase
-rid = df_metadata['RID'].tolist()
-df_assesment_pts = df_assesment[df_assesment['RID'].isin(rid)]
-df_last_assesment= df_assesment_pts.drop_duplicates('RID', keep='last')
+rids = list(set(df_metadata['RID'].tolist()))
+df_assesment_pts = df_assesment[df_assesment['RID'].isin(rids)].copy()
 
-# Merge DXCHANGE and DIAGNOSIS column and homogenise diagnosis
-df_last_assesment = df_last_assesment.copy()
-df_last_assesment['LASTDIAGNOSIS'] = df_last_assesment.pop('DIAGNOSIS').fillna(df_last_assesment.pop('DXCHANGE'))
-df_last_assesment['LASTDIAGNOSIS'].replace({4.0: 2.0, 5.0: 3.0, 8.0: 2.0}, inplace=True)
-df_last_assesment.rename(columns={'EXAMDATE': 'LASTEXAMDATE'}, inplace=True)
-
-# Merge and add wether there was a conversion
-df_metadata = df_metadata.merge(df_last_assesment, on=['RID'])
-df_metadata['CONVERSOR'] = df_metadata['DIAGNOSIS'] != df_metadata['LASTDIAGNOSIS']
+# Homogonise diagnosis data and remove nans due to Phase1
+df_assesment_pts['DIAGNOSIS'] = df_assesment_pts.pop('DIAGNOSIS').fillna(df_assesment_pts.pop('DXCHANGE'))
+df_assesment_pts['DIAGNOSIS'].replace({4.0: 2.0, 5.0: 3.0, 7.0:1.0, 8.0: 2.0}, inplace=True)
+df_assesment_pts.dropna(inplace=True)
+df_assesment_pts.sort_values(by=['RID', 'EXAMDATE'], inplace=True)
 
 # Apply conversion diagnosis variables given by ADNIGO2
-def conversor_types(row):
+def conversor_types(current_diag, new_diag):
     # Keep diagnosis
-    if row['DIAGNOSIS'] == row['LASTDIAGNOSIS']:
-        return row['DIAGNOSIS']
+    if current_diag == new_diag:
+        return current_diag
     # CN to MCI
-    elif row['DIAGNOSIS'] == 1.0 and row['LASTDIAGNOSIS'] == 2.0:
+    elif current_diag == 1.0 and new_diag == 2.0:
         return 4.0
     # MCI to AD
-    elif row['DIAGNOSIS'] == 2.0 and row['LASTDIAGNOSIS'] == 3.0:
+    elif current_diag == 2.0 and new_diag == 3.0:
         return 5.0
     # CN to AD
-    elif row['DIAGNOSIS'] == 1.0 and row['LASTDIAGNOSIS'] == 3.0:
+    elif current_diag == 1.0 and new_diag == 3.0:
         return 6.0
     # MCI to CN
-    elif row['DIAGNOSIS'] == 2.0 and row['LASTDIAGNOSIS'] == 1.0:
+    elif current_diag == 2.0 and new_diag == 1.0:
         return 7.0
     # AD to MCI
-    elif row['DIAGNOSIS'] == 3.0 and row['LASTDIAGNOSIS'] == 2.0:
+    elif current_diag == 3.0 and new_diag == 2.0:
         return 8.0
     # AD to CN
-    elif row['DIAGNOSIS'] == 3.0 and row['LASTDIAGNOSIS'] == 1.0:
+    elif current_diag == 3.0 and new_diag == 1.0:
         return 9.0
 
-df_metadata['TYPECONVERSOR'] = df_metadata.apply(lambda row: conversor_types(row), axis=1)
+# Find conversions and time of conversion for each
+conversor_info = []
+conversion_date_info = []
+for rid in rids:
+    df_pt = df_assesment_pts[df_assesment_pts['RID']==rid]
+    exam_dates = df_pt['EXAMDATE'].tolist()
+    diagnosis = df_pt['DIAGNOSIS'].tolist()
+    # Compare diagnosis to diagnosis when image was taken 
+    initial_diagnosis = float(df_metadata[df_metadata['RID']==rid]['DIAGNOSIS'])
+    conversion_date = None
+    current_conversor_type = None
+    for date, diag in zip(exam_dates, diagnosis):
+        if initial_diagnosis != diag:
+            conversor_type = conversor_types(initial_diagnosis, diag)
+            # Check wether already detected this conversion if not update
+            if conversor_type != current_conversor_type:
+                conversion_date = date
+                current_conversor_type = conversor_type
+        # Save last exam date as conversion date if no conversion
+        elif current_conversor_type == None:
+            conversion_date = date
+    conversor_info.append(current_conversor_type)
+    conversion_date_info.append(conversion_date)
 
+df_conversors = pd.DataFrame(list(zip(rids, conversor_info, conversion_date_info)),
+                             columns=['RID', 'TYPECONVERSOR', 'CONVERSIONDATE'])
+
+# Store all information in metadata
+df_metadata = df_metadata.merge(df_conversors, on=['RID'])
 df_metadata.to_csv('../DATA/adni%d_mri.csv'%phase)
