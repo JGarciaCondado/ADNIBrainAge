@@ -1,10 +1,11 @@
 import pandas as pd
 import numpy as np
+import datetime
 
 #Load data
-phase = 3
+phase = 2
 df_metadata = pd.read_csv('../DATA/adni%d_mri.csv'%phase, index_col=0)\
-                .drop(['LASTEXAMDATE', 'LASTDIAGNOSIS', 'TYPECONVERSOR', 'CONVERSOR'], axis=1)
+                .drop(['TYPECONVERSOR', 'CONVERSIONDATE'], axis=1)
 
 # Load patient assesments
 cols_a = ['RID', 'EXAMDATE',
@@ -55,18 +56,23 @@ for rid in rids:
     exam_dates = df_pt['EXAMDATE'].tolist()
     diagnosis = df_pt['DIAGNOSIS'].tolist()
     # Compare diagnosis to diagnosis when image was taken 
-    initial_diagnosis = float(df_metadata[df_metadata['RID']==rid]['DIAGNOSIS'])
+    initial_diagnosis = df_metadata.at[df_metadata.index[df_metadata['RID']==rid][0], 'DIAGNOSIS']
+    image_date = datetime.datetime.strptime(df_metadata.at[df_metadata.index[df_metadata['RID']==rid][0], 'SCANDATE'],
+                                            '%Y-%m-%d')
     conversion_date = None
-    current_conversor_type = None
+    current_conversor_type = initial_diagnosis
     for date, diag in zip(exam_dates, diagnosis):
-        if initial_diagnosis != diag:
+        # If diagnosis is before image taken ignore
+        if datetime.datetime.strptime(date, '%Y-%m-%d') < image_date:
+            continue
+        elif initial_diagnosis != diag:
             conversor_type = conversor_types(initial_diagnosis, diag)
             # Check wether already detected this conversion if not update
             if conversor_type != current_conversor_type:
                 conversion_date = date
                 current_conversor_type = conversor_type
         # Save last exam date as conversion date if no conversion
-        elif current_conversor_type == None:
+        elif current_conversor_type < 3.5:
             conversion_date = date
     conversor_info.append(current_conversor_type)
     conversion_date_info.append(conversion_date)
