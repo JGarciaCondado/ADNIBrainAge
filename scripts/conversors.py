@@ -5,13 +5,12 @@ import datetime
 #Load data
 phase = 2
 df_metadata = pd.read_csv('../DATA/adni%d_mri.csv'%phase, index_col=0)\
-                .drop(['TYPECONVERSOR', 'CONVERSIONDATE'], axis=1)
 
 # Load patient assesments
 cols_a = ['RID', 'EXAMDATE',
           'DXCHANGE', 'DIAGNOSIS']
 df_assesment = pd.read_csv(
-    'DXSUM_PDXCONV_ADNIALL.csv', usecols=cols_a)
+    '../ASSESMENT/DXSUM_PDXCONV_ADNIALL.csv', usecols=cols_a)
 df_assesment.dropna(subset=['EXAMDATE'], inplace=True)
 
 # Get all patients in phase
@@ -80,6 +79,5 @@ for rid in rids:
 df_conversors = pd.DataFrame(list(zip(rids, conversor_info, conversion_date_info)),
                              columns=['RID', 'TYPECONVERSOR', 'CONVERSIONDATE'])
 
-# Store all information in metadata
-df_metadata = df_metadata.merge(df_conversors, on=['RID'])
-df_metadata.to_csv('../DATA/adni%d_mri.csv'%phase)
+# Store all information in new csv
+df_conversors.to_csv('../DATA/adni%d_conversors.csv'%phase)
