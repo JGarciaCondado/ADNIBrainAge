@@ -18,28 +18,16 @@ df_adni3_sc = df_adni3[df_adni3['VISCODE'].isin(['init', 'sc'])]
 df_adni2_sc = df_adni2_sc.drop_duplicates(subset='RID')
 df_adni3_sc = df_adni3_sc.drop_duplicates(subset='RID')
 
-# Keep only sites with high numbers
-min_pt_adni2 = 20
-adni2_pt_sites = df_adni2_sc['SITEID'].tolist()
-sites_thr_adni2 = [x for x in set(adni2_pt_sites)
-                   if adni2_pt_sites.count(x) > min_pt_adni2]
-df_adni2_clean = df_adni2_sc[df_adni2_sc['SITEID'].isin(sites_thr_adni2)]
-min_pt_adni3 = 25
-adni3_pt_sites = df_adni3_sc['SITEID'].tolist()
-sites_thr_adni3 = [x for x in set(adni3_pt_sites)
-                   if adni3_pt_sites.count(x) > min_pt_adni3]
-df_adni3_clean = df_adni3_sc[df_adni3_sc['SITEID'].isin(sites_thr_adni3)]
-
 # Load roster data
 cols_r = ['Phase', 'RID', 'SITEID', 'PTID']
 df_roster = pd.read_csv('ENROLLMENT/ROSTER.csv', usecols=cols_r)
 
 # Add PTID information to csv
 df_roster_adni2 = df_roster[df_roster['Phase'] == 'ADNI2']
-df_adni2_clean = df_adni2_clean.merge(df_roster_adni2, on=['RID', 'SITEID'])\
+df_adni2_clean = df_adni2_sc.merge(df_roster_adni2, on=['RID', 'SITEID'])\
                                .drop('PHASE', axis=1)
 df_roster_adni3 = df_roster[df_roster['Phase'] == 'ADNI3']
-df_adni3_clean = df_adni3_clean.merge(df_roster_adni3, on=['RID', 'SITEID'])\
+df_adni3_clean = df_adni3_sc.merge(df_roster_adni3, on=['RID', 'SITEID'])\
                                .drop('PHASE', axis=1)
 
 # Full list of all MRI images
