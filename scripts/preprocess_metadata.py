@@ -129,11 +129,6 @@ df_full_adni3 = df_full_adni3.merge(
 df_full_adni3['AGE'] = df_full_adni3['AGE']+df_full_adni3['Years_bl']
 df_full_adni3.drop('Years_bl', axis=1, inplace=True)
 
-# Save all metadata as csv
-df_full_adni2.to_csv('DATA/adni2_mri.csv')
-df_full_adni3.to_csv('DATA/adni3_mri.csv')
-pd.concat([df_full_adni2, df_full_adni3]).to_csv('DATA/adni2and3_mri.csv')
-
 # Save IMAGEIDs as txts
 with open('DATA/adni2_mri_ids.txt', 'w') as f:
     f.write(','.join(str(i) for i in df_full_adni2['IMAGEUID']))
