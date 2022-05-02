@@ -9,10 +9,11 @@
 #SBATCH -o LOG/anat_%A_%a.out # Standard output
 #SBATCH -e LOG/anat_%A_%a.err # Standard error
 
+# Ensure there is a LOG directory
 export FSLOUTPUTTYPE=NIFTI_GZ
 
 cd /home/jorga/ADNIBrainAge
-phase=ADNI2
+phase=ADNI3
 patients=( ${phase}/SUBJECTS/* )
 
 mainRoot=/home/jorga/ADNIBrainAge
