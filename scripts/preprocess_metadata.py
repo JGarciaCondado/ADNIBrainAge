@@ -1,6 +1,4 @@
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
 
 # Clean data
 cols = ['PHASE', 'RID', 'SITEID', 'VISCODE', 'VISCODE2']
@@ -134,3 +132,7 @@ with open('DATA/adni2_mri_ids.txt', 'w') as f:
     f.write(','.join(str(i) for i in df_full_adni2['IMAGEUID']))
 with open('DATA/adni3_mri_ids.txt', 'w') as f:
     f.write(','.join(str(i) for i in df_full_adni3['IMAGEUID']))
+
+# Save all metadata as csv
+df_full_adni2.to_csv('DATA/adni2_mri.csv')
+df_full_adni3.to_csv('DATA/adni3_mri.csv')

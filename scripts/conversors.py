@@ -4,7 +4,7 @@ import datetime
 
 #Load data
 phase = 2
-df_metadata = pd.read_csv('../DATA/adni%d_mri.csv'%phase, index_col=0)\
+df_metadata = pd.read_csv('../DATA/adni%d_mri.csv'%phase, index_col=0)
 
 # Load patient assesments
 cols_a = ['RID', 'EXAMDATE',
