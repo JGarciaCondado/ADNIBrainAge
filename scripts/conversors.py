@@ -3,7 +3,7 @@ import numpy as np
 import datetime
 
 #Load data
-phase = 2
+phase = 3
 df_metadata = pd.read_csv('../DATA/adni%d_mri.csv'%phase, index_col=0)
 
 # Load patient assesments
@@ -78,6 +78,12 @@ for rid in rids:
 
 df_conversors = pd.DataFrame(list(zip(rids, conversor_info, conversion_date_info)),
                              columns=['RID', 'TYPECONVERSOR', 'CONVERSIONDATE'])
+
+# Add time to conversion. For those who have no conversion it will be time to last checkup
+df_conversors = df_conversors.merge(df_metadata[['RID', 'SCANDATE']], on='RID')
+df_conversors['TIME2CONVERSION'] = (df_conversors['CONVERSIONDATE'].astype('datetime64') \
+                                    - df_conversors['SCANDATE'].astype('datetime64')) \
+                                    /pd.to_timedelta(1, unit='D')/365
 
 # Store all information in new csv
 df_conversors.to_csv('../DATA/adni%d_conversors.csv'%phase)
