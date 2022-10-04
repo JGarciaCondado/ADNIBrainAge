@@ -12,6 +12,9 @@ SUBJECTS/
 T1_images/
 DATA/
 
+# Ignore figure directories
+jupyternotebooks/figures
+
 # Notebook checkpoints
 jupyternotebooks/.ipynb_checkpoints/
 
