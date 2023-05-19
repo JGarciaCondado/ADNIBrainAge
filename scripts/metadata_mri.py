@@ -111,7 +111,8 @@ df_full_adni2["DXCHANGE"].replace({4.0: 2.0, 5.0: 3.0, 7.0: 1.0}, inplace=True)
 df_full_adni2.rename(columns={'DXCHANGE': 'DIAGNOSIS'}, inplace=True)
 
 # Load ADNI Merge data to get age information
-cols_m = ['COLPROT', 'PTID', 'VISCODE', 'AGE', 'DX_bl', 'PTGENDER', 'Years_bl']
+cols_m = ['COLPROT', 'PTID', 'VISCODE', 'AGE', 'DX_bl', 'PTGENDER', 'PTEDUCAT',
+          'Years_bl']
 df_adni_merge = pd.read_csv('STUDY_DATA/ADNIMERGE.csv', usecols=cols_m)\
     .rename(columns={'COLPROT': 'Phase', 'VISCODE': 'VISCODE2'})
 
